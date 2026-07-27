@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Utensils, ShoppingBag, Clock, QrCode, ScanLine, X } from 'lucide-react';
+import { Utensils, ShoppingBag, Clock, QrCode, ScanLine, X, LayoutGrid } from 'lucide-react';
 import QrScannerModal from './QrScannerModal';
 import Logo from './Logo';
 
@@ -90,6 +90,18 @@ export default function MobileFrame({ children, tableName, cartCount = 0, cartTo
                 )}
               </div>
               <span>Cart</span>
+            </NavLink>
+
+            <NavLink
+              to="/tables"
+              className={({ isActive }) =>
+                `flex flex-col items-center gap-1 text-[11px] font-medium transition ${
+                  isActive ? 'text-orange-500 font-bold' : 'text-slate-400 hover:text-slate-200'
+                }`
+              }
+            >
+              <LayoutGrid className="w-5 h-5" />
+              <span>Tables</span>
             </NavLink>
 
             <NavLink

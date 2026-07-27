@@ -6,6 +6,7 @@ import TableLanding from './pages/TableLanding';
 import Menu from './pages/Menu';
 import Cart from './pages/Cart';
 import OrderStatus from './pages/OrderStatus';
+import TablesCatalog from './pages/TablesCatalog';
 import { Toaster, toast } from 'react-hot-toast';
 import ConfirmModal from './components/ConfirmModal';
 
@@ -79,6 +80,10 @@ export default function App() {
           <Route 
             path="/table/:tableId" 
             element={<TableLanding setBookingInfo={setBookingInfo} />} 
+          />
+          <Route 
+            path="/tables" 
+            element={<TablesCatalog setBookingInfo={setBookingInfo} />} 
           />
           <Route 
             path="/menu" 
