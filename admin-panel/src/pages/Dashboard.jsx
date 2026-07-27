@@ -11,7 +11,8 @@ import {
   ArrowRight,
   Clock,
   Sparkles,
-  AlertCircle
+  AlertCircle,
+  Users
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -253,36 +254,46 @@ export default function Dashboard() {
                 No tables registered. Go to Table Management to add tables.
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {tables.map((tbl) => (
-                  <div 
-                    key={tbl.id} 
-                    className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 flex flex-col justify-between space-y-2"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h4 className="font-semibold text-sm text-slate-200">{tbl.name}</h4>
-                        <p className="text-[11px] text-slate-400">Capacity: {tbl.capacity} Seats</p>
+              <div className="space-y-3 flex flex-col">
+                {tables.map((tbl) => {
+                  const isOccupied = tbl.bookings?.some(b => b.status === 'ACTIVE');
+                  return (
+                    <div 
+                      key={tbl.id} 
+                      className={`p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between relative overflow-hidden ${
+                        isOccupied 
+                          ? 'bg-rose-500/[0.02] border-rose-500/20 hover:border-rose-500/30' 
+                          : 'bg-emerald-500/[0.02] border-emerald-500/20 hover:border-emerald-500/30'
+                      }`}
+                    >
+                      {/* Left Accent Line */}
+                      <div className={`absolute top-0 bottom-0 left-0 w-[3px] ${
+                        isOccupied ? 'bg-rose-500/40' : 'bg-emerald-500/40'
+                      }`} />
+
+                      <div className="pl-2 space-y-1">
+                        <h4 className="font-bold text-sm text-slate-100">{tbl.name}</h4>
+                        <div className="flex items-center gap-3 text-[11px] text-slate-400">
+                          <div className="flex items-center gap-1">
+                            <Users className="w-3.5 h-3.5 text-slate-500" />
+                            <span>{tbl.capacity} Seats</span>
+                          </div>
+                          <span className="text-slate-600 font-mono">ID: {tbl.id.slice(0, 6)}</span>
+                        </div>
                       </div>
-                      {(() => {
-                        const isOccupied = tbl.bookings?.some(b => b.status === 'ACTIVE');
-                        return (
-                          <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full border shrink-0 ${
-                            isOccupied 
-                              ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' 
-                              : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                          }`}>
-                            {isOccupied ? 'Occupied' : 'Available'}
-                          </span>
-                        );
-                      })()}
+
+                      <div className="flex items-center gap-3">
+                        <span className={`px-2.5 py-0.5 text-[9px] font-bold rounded-lg border shrink-0 tracking-wide uppercase ${
+                          isOccupied 
+                            ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' 
+                            : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        }`}>
+                          {isOccupied ? 'Occupied' : 'Available'}
+                        </span>
+                      </div>
                     </div>
-                    <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
-                      <span className="text-slate-500">ID: {tbl.id.slice(0, 6)}</span>
-                      <span className="text-xs text-orange-400">QR Ready</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
