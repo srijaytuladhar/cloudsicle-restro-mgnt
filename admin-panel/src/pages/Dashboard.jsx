@@ -48,7 +48,10 @@ export default function Dashboard() {
       // 2. Fetch Tables
       const { data: tablesData, error: tablesErr } = await supabase
         .from('cl_restro_tables')
-        .select('*')
+        .select(`
+          *,
+          bookings:cl_restro_bookings(id, status)
+        `)
         .order('name');
 
       if (tablesErr) throw tablesErr;
@@ -256,9 +259,23 @@ export default function Dashboard() {
                     key={tbl.id} 
                     className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 flex flex-col justify-between space-y-2"
                   >
-                    <div>
-                      <h4 className="font-semibold text-sm text-slate-200">{tbl.name}</h4>
-                      <p className="text-[11px] text-slate-400">Capacity: {tbl.capacity} Seats</p>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-semibold text-sm text-slate-200">{tbl.name}</h4>
+                        <p className="text-[11px] text-slate-400">Capacity: {tbl.capacity} Seats</p>
+                      </div>
+                      {(() => {
+                        const isOccupied = tbl.bookings?.some(b => b.status === 'ACTIVE');
+                        return (
+                          <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full border shrink-0 ${
+                            isOccupied 
+                              ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' 
+                              : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                          }`}>
+                            {isOccupied ? 'Occupied' : 'Available'}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
                       <span className="text-slate-500">ID: {tbl.id.slice(0, 6)}</span>

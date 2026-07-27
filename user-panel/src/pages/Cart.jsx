@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from 'react-hot-toast';
 import { 
   ShoppingBag, 
   Trash2, 
@@ -40,12 +41,12 @@ export default function Cart({ bookingInfo, cart, setCart }) {
 
   const handlePlaceOrder = async () => {
     if (!bookingInfo || !bookingInfo.bookingId || !bookingInfo.tableId) {
-      alert('Active table booking session required. Please scan a table QR code first.');
+      toast.error('Active table booking session required. Please scan a table QR code first.');
       return;
     }
 
     if (cart.length === 0) {
-      alert('Your cart is empty');
+      toast.error('Your cart is empty');
       return;
     }
 
@@ -86,7 +87,7 @@ export default function Cart({ bookingInfo, cart, setCart }) {
       navigate(`/order-status/${orderData.id}`);
     } catch (err) {
       console.error('Error placing order:', err);
-      alert('Failed to place order: ' + err.message);
+      toast.error('Failed to place order: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }

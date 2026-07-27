@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Utensils, ShoppingBag, Clock, QrCode, ScanLine } from 'lucide-react';
+import { Utensils, ShoppingBag, Clock, QrCode, ScanLine, X } from 'lucide-react';
 import QrScannerModal from './QrScannerModal';
 
-export default function MobileFrame({ children, tableName, cartCount = 0, cartTotal = 0 }) {
+export default function MobileFrame({ children, tableName, cartCount = 0, cartTotal = 0, onCancelBooking }) {
   const location = useLocation();
   const [isScannerOpen, setIsScannerOpen] = useState(false);
 
@@ -28,9 +28,18 @@ export default function MobileFrame({ children, tableName, cartCount = 0, cartTo
           </div>
 
           {tableName ? (
-            <div className="px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-[11px] font-semibold text-slate-200 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>{tableName}</span>
+            <div className="flex items-center gap-1.5">
+              <div className="px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-[11px] font-semibold text-slate-200 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>{tableName}</span>
+              </div>
+              <button
+                onClick={onCancelBooking}
+                title="Cancel table booking"
+                className="p-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
           ) : (
             <button 

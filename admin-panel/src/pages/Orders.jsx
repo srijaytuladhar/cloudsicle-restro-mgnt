@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import Header from '../components/Header';
+import { toast } from 'react-hot-toast';
 import StatusBadge, { ORDER_FLOW, STATUS_CONFIG } from '../components/StatusBadge';
 import { 
   ShoppingBag, 
@@ -80,9 +81,10 @@ export default function Orders() {
         .eq('id', orderId);
 
       if (error) throw error;
+      toast.success(`Order status updated to ${newStatus.replace(/_/g, ' ')}!`);
       fetchOrders();
     } catch (err) {
-      alert('Error updating order status: ' + err.message);
+      toast.error('Error updating order status: ' + err.message);
     }
   };
 

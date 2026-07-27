@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from 'react-hot-toast';
 import { Users, CheckCircle2, QrCode, AlertCircle, ArrowRight } from 'lucide-react';
 
 export default function TableLanding({ setBookingInfo }) {
@@ -21,7 +22,10 @@ export default function TableLanding({ setBookingInfo }) {
 
         const { data, error } = await supabase
           .from('cl_restro_tables')
-          .select('*')
+          .select(`
+            *,
+            bookings:cl_restro_bookings(id, status)
+          `)
           .eq('id', tableId)
           .single();
 
@@ -41,8 +45,31 @@ export default function TableLanding({ setBookingInfo }) {
     fetchTableInfo();
   }, [tableId]);
 
+  const localSession = (() => {
+    try {
+      const stored = localStorage.getItem('restro_session');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const activeBooking = table?.bookings?.find(b => b.status === 'ACTIVE');
+  const isOccupiedByOther = activeBooking && (!localSession || localSession.bookingId !== activeBooking.id);
+  const hasActiveLocalSession = activeBooking && localSession && localSession.bookingId === activeBooking.id;
+
   const handleConfirmBooking = async () => {
     if (!table) return;
+    if (isOccupiedByOther) {
+      toast.error("This table is currently occupied by another customer.");
+      return;
+    }
+    
+    if (hasActiveLocalSession) {
+      navigate('/menu');
+      return;
+    }
+
     setBookingLoading(true);
     try {
       // Create new booking row
@@ -70,10 +97,11 @@ export default function TableLanding({ setBookingInfo }) {
       localStorage.setItem('restro_session', JSON.stringify(info));
       if (setBookingInfo) setBookingInfo(info);
 
+      toast.success(`Dining session opened at ${table.name}!`);
       // Redirect to menu
       navigate('/menu');
     } catch (err) {
-      alert('Error creating booking session: ' + err.message);
+      toast.error('Error creating booking session: ' + err.message);
     } finally {
       setBookingLoading(false);
     }
@@ -124,25 +152,58 @@ export default function TableLanding({ setBookingInfo }) {
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 text-left space-y-3 text-xs text-slate-300">
-          <h4 className="font-bold text-white flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            Session Details
-          </h4>
-          <p className="text-slate-400">
-            By confirming, a dining session will be opened for <strong>{table.name}</strong>. You will be able to order food directly to this table.
-          </p>
-        </div>
+        {isOccupiedByOther ? (
+          <div className="bg-rose-950/20 border border-rose-500/30 rounded-2xl p-5 text-left space-y-3 text-xs text-slate-300">
+            <h4 className="font-bold text-rose-400 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              Table Occupied
+            </h4>
+            <p className="text-slate-400">
+              <strong>{table.name}</strong> is currently occupied by another customer with an active session. Please scan another table's QR code or ask restaurant staff for assistance.
+            </p>
+          </div>
+        ) : hasActiveLocalSession ? (
+          <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-2xl p-5 text-left space-y-3 text-xs text-slate-300">
+            <h4 className="font-bold text-emerald-400 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4" />
+              Active Session Found
+            </h4>
+            <p className="text-slate-400">
+              You already have an active dining session at <strong>{table.name}</strong>. You can proceed directly to the menu to view or add items to your order.
+            </p>
+          </div>
+        ) : (
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 text-left space-y-3 text-xs text-slate-300">
+            <h4 className="font-bold text-white flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              Session Details
+            </h4>
+            <p className="text-slate-400">
+              By confirming, a dining session will be opened for <strong>{table.name}</strong>. You will be able to order food directly to this table.
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="pb-6">
         <button
           onClick={handleConfirmBooking}
-          disabled={bookingLoading}
-          className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-base shadow-xl shadow-orange-600/25 flex items-center justify-center gap-2 transition disabled:opacity-50"
+          disabled={bookingLoading || isOccupiedByOther}
+          className={`w-full py-4 px-6 rounded-2xl font-bold text-base flex items-center justify-center gap-2 transition ${
+            isOccupiedByOther 
+              ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+              : 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white shadow-xl shadow-orange-600/25 disabled:opacity-50'
+          }`}
         >
           {bookingLoading ? (
             <span>Creating Session...</span>
+          ) : isOccupiedByOther ? (
+            <span>Table Occupied</span>
+          ) : hasActiveLocalSession ? (
+            <>
+              <span>Enter Menu</span>
+              <ArrowRight className="w-5 h-5" />
+            </>
           ) : (
             <>
               <span>Book & View Menu</span>

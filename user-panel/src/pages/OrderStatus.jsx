@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from 'react-hot-toast';
 import { 
   Clock, 
   ChefHat, 
@@ -48,9 +49,10 @@ export default function OrderStatus({ bookingInfo }) {
         .eq('id', activeOrder.id);
 
       if (error) throw error;
+      toast.success('Cash payment requested. Service staff notified.');
       fetchOrderDetails();
     } catch (err) {
-      alert('Error updating to Cash Payment: ' + err.message);
+      toast.error('Error updating to Cash Payment: ' + err.message);
     }
   };
 
@@ -68,9 +70,10 @@ export default function OrderStatus({ bookingInfo }) {
           .eq('id', activeOrder.id);
 
         if (error) throw error;
+        toast.success('Payment completed successfully!');
         fetchOrderDetails();
       } catch (err) {
-        alert('Error updating to Online Payment: ' + err.message);
+        toast.error('Error updating to Online Payment: ' + err.message);
       } finally {
         setIsProcessingOnline(false);
       }

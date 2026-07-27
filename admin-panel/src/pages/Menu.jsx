@@ -14,6 +14,8 @@ import {
   FolderPlus,
   AlertCircle
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import ConfirmModal from '../components/ConfirmModal';
 
 export default function Menu() {
   const [items, setItems] = useState([]);
@@ -21,6 +23,8 @@ export default function Menu() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [confirmDeleteItemId, setConfirmDeleteItemId] = useState(null);
+  const [confirmDeleteCategoryId, setConfirmDeleteCategoryId] = useState(null);
 
   // Modal states
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
@@ -101,7 +105,7 @@ export default function Menu() {
   const handleSaveItem = async (e) => {
     e.preventDefault();
     if (!itemForm.name || !itemForm.price) {
-      alert('Name and price are required');
+      toast.error('Name and price are required');
       return;
     }
 
@@ -121,31 +125,33 @@ export default function Menu() {
           .update(payload)
           .eq('id', editingItem.id);
         if (error) throw error;
+        toast.success('Menu item updated successfully!');
       } else {
         const { error } = await supabase
           .from('cl_restro_menu_items')
           .insert([payload]);
         if (error) throw error;
+        toast.success('Menu item created successfully!');
       }
 
       setIsItemModalOpen(false);
       fetchData();
     } catch (err) {
-      alert('Error saving menu item: ' + err.message);
+      toast.error('Error saving menu item: ' + err.message);
     }
   };
 
   const handleDeleteItem = async (id) => {
-    if (!confirm('Are you sure you want to delete this menu item?')) return;
     try {
       const { error } = await supabase
         .from('cl_restro_menu_items')
         .delete()
         .eq('id', id);
       if (error) throw error;
+      toast.success('Menu item deleted successfully!');
       fetchData();
     } catch (err) {
-      alert('Error deleting menu item: ' + err.message);
+      toast.error('Error deleting menu item: ' + err.message);
     }
   };
 
@@ -156,9 +162,10 @@ export default function Menu() {
         .update({ is_available: !item.is_available })
         .eq('id', item.id);
       if (error) throw error;
+      toast.success('Availability updated!');
       fetchData();
     } catch (err) {
-      alert('Error updating availability: ' + err.message);
+      toast.error('Error updating availability: ' + err.message);
     }
   };
 
@@ -170,25 +177,26 @@ export default function Menu() {
         .from('cl_restro_menu_categories')
         .insert([{ name: categoryName.trim() }]);
       if (error) throw error;
+      toast.success('Category added successfully!');
       setCategoryName('');
       setIsCategoryModalOpen(false);
       fetchData();
     } catch (err) {
-      alert('Error adding category: ' + err.message);
+      toast.error('Error adding category: ' + err.message);
     }
   };
 
   const handleDeleteCategory = async (catId) => {
-    if (!confirm('Deleting this category will remove it from linked menu items. Proceed?')) return;
     try {
       const { error } = await supabase
         .from('cl_restro_menu_categories')
         .delete()
         .eq('id', catId);
       if (error) throw error;
+      toast.success('Category deleted successfully!');
       fetchData();
     } catch (err) {
-      alert('Error deleting category: ' + err.message);
+      toast.error('Error deleting category: ' + err.message);
     }
   };
 
@@ -354,7 +362,7 @@ export default function Menu() {
                       <Edit3 className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleDeleteItem(item.id)}
+                      onClick={() => setConfirmDeleteItemId(item.id)}
                       className="p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition border border-rose-500/20"
                       title="Delete Item"
                     >
@@ -506,7 +514,7 @@ export default function Menu() {
                     <span className="font-semibold text-slate-200">{c.name}</span>
                     <button
                       type="button"
-                      onClick={() => handleDeleteCategory(c.id)}
+                      onClick={() => setConfirmDeleteCategoryId(c.id)}
                       className="text-rose-400 hover:text-rose-300 p-1"
                       title="Delete category"
                     >
@@ -550,6 +558,28 @@ export default function Menu() {
           </div>
         </div>
       )}
+
+      <ConfirmModal 
+        isOpen={confirmDeleteItemId !== null}
+        title="Delete Menu Item"
+        message="Are you sure you want to delete this menu item? This will remove it permanently from the food catalog."
+        onConfirm={() => {
+          handleDeleteItem(confirmDeleteItemId);
+          setConfirmDeleteItemId(null);
+        }}
+        onCancel={() => setConfirmDeleteItemId(null)}
+      />
+
+      <ConfirmModal 
+        isOpen={confirmDeleteCategoryId !== null}
+        title="Delete Category"
+        message="Deleting this category will remove it from all linked menu items. Are you sure you want to proceed?"
+        onConfirm={() => {
+          handleDeleteCategory(confirmDeleteCategoryId);
+          setConfirmDeleteCategoryId(null);
+        }}
+        onCancel={() => setConfirmDeleteCategoryId(null)}
+      />
     </div>
   );
 }

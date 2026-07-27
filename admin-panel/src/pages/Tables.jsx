@@ -11,8 +11,11 @@ import {
   Users, 
   QrCode, 
   X,
-  AlertCircle
+  AlertCircle,
+  Unlock
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import ConfirmModal from '../components/ConfirmModal';
 
 export default function Tables() {
   const [tables, setTables] = useState([]);
@@ -22,6 +25,8 @@ export default function Tables() {
 
   const [tableName, setTableName] = useState('');
   const [capacity, setCapacity] = useState('4');
+  const [confirmDeleteTableId, setConfirmDeleteTableId] = useState(null);
+  const [confirmFreeBookingId, setConfirmFreeBookingId] = useState(null);
 
   const userAppUrl = import.meta.env.VITE_USER_APP_URL || 'http://localhost:5174';
 
@@ -30,7 +35,10 @@ export default function Tables() {
     try {
       const { data, error } = await supabase
         .from('cl_restro_tables')
-        .select('*')
+        .select(`
+          *,
+          bookings:cl_restro_bookings(id, status)
+        `)
         .order('created_at', { ascending: true });
       if (error) throw error;
       setTables(data || []);
@@ -43,6 +51,14 @@ export default function Tables() {
 
   useEffect(() => {
     fetchTables();
+
+    const pollInterval = setInterval(() => {
+      fetchTables();
+    }, 5000);
+
+    return () => {
+      clearInterval(pollInterval);
+    };
   }, []);
 
   const openAddModal = () => {
@@ -75,31 +91,48 @@ export default function Tables() {
           .update(payload)
           .eq('id', editingTable.id);
         if (error) throw error;
+        toast.success('Table updated successfully!');
       } else {
         const { error } = await supabase
           .from('cl_restro_tables')
           .insert([payload]);
         if (error) throw error;
+        toast.success('Table created successfully!');
       }
 
       setIsModalOpen(false);
       fetchTables();
     } catch (err) {
-      alert('Error saving table: ' + err.message);
+      toast.error('Error saving table: ' + err.message);
     }
   };
 
   const handleDeleteTable = async (id) => {
-    if (!confirm('Are you sure you want to delete this table? All associated bookings will be affected.')) return;
     try {
       const { error } = await supabase
         .from('cl_restro_tables')
         .delete()
         .eq('id', id);
       if (error) throw error;
+      toast.success('Table deleted successfully!');
       fetchTables();
     } catch (err) {
-      alert('Error deleting table: ' + err.message);
+      toast.error('Error deleting table: ' + err.message);
+    }
+  };
+
+  const handleFreeTable = async (bookingId) => {
+    try {
+      const { error } = await supabase
+        .from('cl_restro_bookings')
+        .update({ status: 'CLOSED' })
+        .eq('id', bookingId);
+
+      if (error) throw error;
+      toast.success('Table released successfully!');
+      fetchTables();
+    } catch (err) {
+      toast.error('Error freeing table: ' + err.message);
     }
   };
 
@@ -172,7 +205,7 @@ export default function Tables() {
                       <Edit3 className="w-3.5 h-3.5" />
                     </button>
                     <button
-                      onClick={() => handleDeleteTable(table.id)}
+                      onClick={() => setConfirmDeleteTableId(table.id)}
                       className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition border border-rose-500/20"
                       title="Delete Table"
                     >
@@ -180,9 +213,25 @@ export default function Tables() {
                     </button>
                   </div>
 
+                  {/* Status Badge Top Left */}
+                  <div className="absolute top-4 left-4">
+                    {(() => {
+                      const isOccupied = table.bookings?.some(b => b.status === 'ACTIVE');
+                      return (
+                        <span className={`px-2.5 py-0.5 text-[9px] font-bold rounded-full border ${
+                          isOccupied 
+                            ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' 
+                            : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        }`}>
+                          {isOccupied ? 'Occupied' : 'Available'}
+                        </span>
+                      );
+                    })()}
+                  </div>
+
                   {/* Header */}
-                  <div className="w-full text-left mb-4">
-                    <h3 className="font-bold text-lg text-white">{table.name}</h3>
+                  <div className="w-full text-left mb-4 pt-5">
+                    <h3 className="font-bold text-lg text-white pr-16">{table.name}</h3>
                     <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
                       <Users className="w-3.5 h-3.5 text-orange-400" />
                       <span>Capacity: <strong className="text-slate-200">{table.capacity} Persons</strong></span>
@@ -212,6 +261,20 @@ export default function Tables() {
                       <ExternalLink className="w-3 h-3 shrink-0" />
                     </a>
                   </div>
+
+                  {/* Free Up Table Button */}
+                  {(() => {
+                    const activeBooking = table.bookings?.find(b => b.status === 'ACTIVE');
+                    return activeBooking ? (
+                      <button
+                        onClick={() => setConfirmFreeBookingId(activeBooking.id)}
+                        className="w-full mb-2 flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-rose-600/10 hover:bg-rose-600/20 text-rose-400 text-xs font-bold border border-rose-500/20 transition"
+                      >
+                        <Unlock className="w-3.5 h-3.5 text-rose-400" />
+                        <span>Free Up Table</span>
+                      </button>
+                    ) : null;
+                  })()}
 
                   {/* Download PNG Button */}
                   <button
@@ -289,6 +352,28 @@ export default function Tables() {
           </div>
         </div>
       )}
+
+      <ConfirmModal 
+        isOpen={confirmDeleteTableId !== null}
+        title="Delete Dining Table"
+        message="Are you sure you want to delete this table? All associated QR codes, bookings, and active orders will be affected."
+        onConfirm={() => {
+          handleDeleteTable(confirmDeleteTableId);
+          setConfirmDeleteTableId(null);
+        }}
+        onCancel={() => setConfirmDeleteTableId(null)}
+      />
+
+      <ConfirmModal 
+        isOpen={confirmFreeBookingId !== null}
+        title="Release Table Session"
+        message="Are you sure you want to release this table session? This will manually end the active customer session."
+        onConfirm={() => {
+          handleFreeTable(confirmFreeBookingId);
+          setConfirmFreeBookingId(null);
+        }}
+        onCancel={() => setConfirmFreeBookingId(null)}
+      />
     </div>
   );
 }
