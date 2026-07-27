@@ -6,7 +6,8 @@ import {
   UtensilsCrossed, 
   Sparkles, 
   BadgeCheck,
-  Coins
+  Coins,
+  X
 } from 'lucide-react';
 
 export const STATUS_CONFIG = {
@@ -58,6 +59,13 @@ export const STATUS_CONFIG = {
     text: 'text-amber-400',
     border: 'border-amber-500/20',
     icon: Coins
+  },
+  CANCELLED: {
+    label: 'Cancelled',
+    bg: 'bg-rose-500/10',
+    text: 'text-rose-400',
+    border: 'border-rose-500/20',
+    icon: X
   }
 };
 

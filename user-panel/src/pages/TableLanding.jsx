@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'react-hot-toast';
 import { Users, CheckCircle2, QrCode, AlertCircle, ArrowRight } from 'lucide-react';
+import Logo from '../components/Logo';
 
 export default function TableLanding({ setBookingInfo }) {
   const { tableId } = useParams();
@@ -137,8 +138,8 @@ export default function TableLanding({ setBookingInfo }) {
   return (
     <div className="h-full flex flex-col justify-between p-6 bg-gradient-to-b from-slate-900 to-slate-950">
       <div className="space-y-6 pt-6 text-center">
-        <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center text-white shadow-xl shadow-orange-500/20">
-          <QrCode className="w-10 h-10" />
+        <div className="text-white flex justify-center py-2 animate-bounce">
+          <Logo size={72} />
         </div>
 
         <div className="space-y-2">

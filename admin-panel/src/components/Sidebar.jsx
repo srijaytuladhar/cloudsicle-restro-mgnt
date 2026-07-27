@@ -10,6 +10,8 @@ import {
   ExternalLink
 } from 'lucide-react';
 
+import Logo from './Logo';
+
 export default function Sidebar() {
   const navItems = [
     { to: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -26,11 +28,11 @@ export default function Sidebar() {
       <div>
         {/* Brand Header */}
         <div className="p-6 border-b border-slate-800/80 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/20 text-white">
-            <ChefHat className="w-6 h-6" />
+          <div className="text-white">
+            <Logo size={36} />
           </div>
           <div>
-            <h1 className="font-bold text-lg text-white leading-tight">Cloudsicle</h1>
+            <h1 className="font-extrabold text-lg text-white leading-tight tracking-wide">Cloud Sicle</h1>
             <p className="text-xs text-orange-400 font-medium">Restro Admin Hub</p>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 import Header from '../components/Header';
 import { toast } from 'react-hot-toast';
 import StatusBadge, { ORDER_FLOW, STATUS_CONFIG } from '../components/StatusBadge';
+import ConfirmModal from '../components/ConfirmModal';
 import { 
   ShoppingBag, 
   Clock, 
@@ -23,6 +24,7 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('ALL');
   const [expandedTablePayments, setExpandedTablePayments] = useState({});
+  const [confirmCancelOrderId, setConfirmCancelOrderId] = useState(null);
 
   const fetchOrders = async () => {
     try {
@@ -73,6 +75,10 @@ export default function Orders() {
   }, []);
 
   const handleUpdateStatus = async (orderId, newStatus) => {
+    if (newStatus === 'CANCELLED') {
+      setConfirmCancelOrderId(orderId);
+      return;
+    }
     try {
       const { error } = await supabase
         .from('cl_restro_orders')
@@ -89,6 +95,26 @@ export default function Orders() {
       toast.error('Error updating order status: ' + err.message);
     }
   };
+
+  const executeCancelOrder = async (orderId) => {
+    try {
+      const { error } = await supabase
+        .from('cl_restro_orders')
+        .update({ 
+          status: 'CANCELLED', 
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', orderId);
+
+      if (error) throw error;
+      toast.success('Order cancelled successfully.');
+      fetchOrders();
+    } catch (err) {
+      toast.error('Error cancelling order: ' + err.message);
+    }
+  };
+
+  const FILTER_STATUSES = [...ORDER_FLOW, 'CANCELLED'];
 
   // Group orders by table
   const filteredOrders = orders.filter(o => 
@@ -163,9 +189,21 @@ export default function Orders() {
 
         {/* Status Transition Controls */}
         <div className="pt-3 border-t border-slate-800 space-y-2">
-          <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-            {order.status === 'CASH_PAYMENT_PENDING' ? 'Verify Cash Payment:' : 'Update Order Status Workflow:'}
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              {order.status === 'CASH_PAYMENT_PENDING' ? 'Verify Cash Payment:' : 'Update Order Status Workflow:'}
+            </label>
+            {order.status !== 'PAYMENT_DONE' && order.status !== 'CANCELLED' && (
+              <button
+                onClick={() => setConfirmCancelOrderId(order.id)}
+                className="text-[10px] text-rose-400 hover:text-rose-350 font-bold transition flex items-center gap-1"
+                title="Cancel Order"
+              >
+                <X className="w-3 h-3" />
+                <span>Cancel Order</span>
+              </button>
+            )}
+          </div>
           {order.status === 'CASH_PAYMENT_PENDING' ? (
             <div className="flex items-center gap-2">
               <button
@@ -195,6 +233,9 @@ export default function Orders() {
                     {STATUS_CONFIG[s]?.label || s}
                   </option>
                 ))}
+                {order.status === 'CANCELLED' && (
+                  <option value="CANCELLED">Cancelled</option>
+                )}
               </select>
 
               {nextStatus && (
@@ -236,7 +277,7 @@ export default function Orders() {
           >
             All Orders ({orders.length})
           </button>
-          {ORDER_FLOW.map((statusKey) => {
+          {FILTER_STATUSES.map((statusKey) => {
             const count = orders.filter(o => o.status === statusKey).length;
             const config = STATUS_CONFIG[statusKey];
             return (
@@ -270,11 +311,12 @@ export default function Orders() {
         ) : (
           <div className="space-y-8">
             {Object.values(tableGroups).map((group) => {
-              const activeOrders = group.orders.filter(o => o.status !== 'PAYMENT_DONE');
+              const activeOrders = group.orders.filter(o => o.status !== 'PAYMENT_DONE' && o.status !== 'CANCELLED');
               const paidOrders = group.orders.filter(o => o.status === 'PAYMENT_DONE');
+              const cancelledOrders = group.orders.filter(o => o.status === 'CANCELLED');
               
               // If filtering by a specific status, only show groups with matching orders
-              if (activeOrders.length === 0 && paidOrders.length === 0) return null;
+              if (activeOrders.length === 0 && paidOrders.length === 0 && cancelledOrders.length === 0) return null;
 
               return (
                 <div 
@@ -305,7 +347,7 @@ export default function Orders() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {activeOrders.map(order => renderOrderCard(order))}
                     </div>
-                  ) : paidOrders.length > 0 && selectedStatusFilter !== 'PAYMENT_DONE' ? (
+                  ) : (paidOrders.length > 0 || cancelledOrders.length > 0) && selectedStatusFilter !== 'PAYMENT_DONE' && selectedStatusFilter !== 'CANCELLED' ? (
                     <p className="text-xs text-slate-500 italic">No active orders</p>
                   ) : null}
 
@@ -342,12 +384,57 @@ export default function Orders() {
                       )}
                     </div>
                   )}
+
+                  {/* Collapsible Cancelled Orders */}
+                  {cancelledOrders.length > 0 && (
+                    <div className="pt-2 border-t border-slate-800/80">
+                      <button
+                        onClick={() => {
+                          setExpandedTablePayments(prev => ({
+                            ...prev,
+                            [`cancelled-${group.tableId}`]: !prev[`cancelled-${group.tableId}`]
+                          }));
+                        }}
+                        className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800/80 text-left text-xs font-bold text-slate-300 transition"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-rose-500" />
+                          <span>Cancelled Orders</span>
+                          <span className="px-2 py-0.5 rounded-full bg-slate-900 text-[10px] text-slate-400 border border-slate-850">
+                            {cancelledOrders.length}
+                          </span>
+                        </div>
+                        {expandedTablePayments[`cancelled-${group.tableId}`] ? (
+                          <ChevronDown className="w-4 h-4 text-slate-400" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-slate-400" />
+                        )}
+                      </button>
+
+                      {expandedTablePayments[`cancelled-${group.tableId}`] && (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                          {cancelledOrders.map(order => renderOrderCard(order))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
         )}
       </main>
+
+      <ConfirmModal 
+        isOpen={confirmCancelOrderId !== null}
+        title="Cancel Customer Order"
+        message="Are you sure you want to cancel this order? This will reject the items and notify the customer's order tracking timeline."
+        onConfirm={() => {
+          executeCancelOrder(confirmCancelOrderId);
+          setConfirmCancelOrderId(null);
+        }}
+        onCancel={() => setConfirmCancelOrderId(null)}
+      />
     </div>
   );
 }

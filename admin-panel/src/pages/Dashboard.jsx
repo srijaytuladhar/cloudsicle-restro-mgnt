@@ -75,7 +75,7 @@ export default function Dashboard() {
       const orders = ordersData || [];
       const paidOrders = orders.filter(o => o.status === 'PAYMENT_DONE');
       const todayRev = paidOrders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
-      const activeOrds = orders.filter(o => o.status !== 'PAYMENT_DONE').length;
+      const activeOrds = orders.filter(o => o.status !== 'PAYMENT_DONE' && o.status !== 'CANCELLED').length;
 
       setMetrics({
         todayRevenue: todayRev,

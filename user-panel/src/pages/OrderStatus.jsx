@@ -15,7 +15,8 @@ import {
   Utensils,
   Coins,
   CreditCard,
-  Loader2
+  Loader2,
+  X
 } from 'lucide-react';
 
 const ORDER_STEPS = [
@@ -202,7 +203,7 @@ export default function OrderStatus({ bookingInfo }) {
       </div>
 
       {/* Visual Stepper / Timeline for Active Order */}
-      {activeOrder && (
+      {activeOrder && activeOrder.status !== 'CANCELLED' && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-6">
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <div className="flex items-center gap-2">
@@ -280,6 +281,24 @@ export default function OrderStatus({ bookingInfo }) {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Cancelled Order Banner */}
+      {activeOrder && activeOrder.status === 'CANCELLED' && (
+        <div className="bg-rose-950/20 border border-rose-500/30 rounded-2xl p-5 space-y-3 shadow-lg shadow-rose-500/5">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-rose-500/10 rounded-xl text-rose-400 border border-rose-500/20">
+              <X className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white">Order Cancelled</h3>
+              <p className="text-xs text-rose-400 font-medium">This order was cancelled by the staff</p>
+            </div>
+          </div>
+          <p className="text-xs text-slate-400">
+            If you have any questions or would like to place a new order, please scan another table QR code or contact restaurant staff.
+          </p>
         </div>
       )}
 

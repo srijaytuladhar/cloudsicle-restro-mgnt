@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Utensils, ShoppingBag, Clock, QrCode, ScanLine, X } from 'lucide-react';
 import QrScannerModal from './QrScannerModal';
+import Logo from './Logo';
 
 export default function MobileFrame({ children, tableName, cartCount = 0, cartTotal = 0, onCancelBooking }) {
   const location = useLocation();
@@ -18,11 +19,11 @@ export default function MobileFrame({ children, tableName, cartCount = 0, cartTo
         {/* Top Header */}
         <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-5 py-4 flex items-center justify-between z-30 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center text-white shadow-md shadow-orange-500/20">
-              <Utensils className="w-5 h-5" />
+            <div className="text-white">
+              <Logo size={28} />
             </div>
             <div>
-              <h1 className="font-bold text-sm text-white tracking-wide leading-tight">Cloudsicle Restro</h1>
+              <h1 className="font-extrabold text-sm text-white tracking-wide leading-tight">Cloud Sicle</h1>
               <p className="text-[11px] text-orange-400 font-medium">Table Digital Menu</p>
             </div>
           </div>
