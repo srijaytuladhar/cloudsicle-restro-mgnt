@@ -10,7 +10,10 @@ import {
   Filter, 
   AlertCircle, 
   Receipt,
-  UtensilsCrossed
+  UtensilsCrossed,
+  Check,
+  X,
+  Coins
 } from 'lucide-react';
 
 export default function Orders() {
@@ -236,32 +239,51 @@ export default function Orders() {
                         {/* Status Transition Controls */}
                         <div className="pt-3 border-t border-slate-800 space-y-2">
                           <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                            Update Order Status Workflow:
+                            {order.status === 'CASH_PAYMENT_PENDING' ? 'Verify Cash Payment:' : 'Update Order Status Workflow:'}
                           </label>
-                          <div className="flex items-center gap-2">
-                            <select
-                              value={order.status}
-                              onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                              className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 font-semibold focus:outline-none focus:border-orange-500"
-                            >
-                              {ORDER_FLOW.map((s) => (
-                                <option key={s} value={s}>
-                                  {STATUS_CONFIG[s]?.label || s}
-                                </option>
-                              ))}
-                            </select>
-
-                            {nextStatus && (
+                          {order.status === 'CASH_PAYMENT_PENDING' ? (
+                            <div className="flex items-center gap-2">
                               <button
-                                onClick={() => handleUpdateStatus(order.id, nextStatus)}
-                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold shrink-0 shadow-md shadow-orange-600/20 transition"
-                                title={`Advance to ${STATUS_CONFIG[nextStatus]?.label}`}
+                                onClick={() => handleUpdateStatus(order.id, 'PAYMENT_DONE')}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/25 transition"
                               >
-                                <span>Advance</span>
-                                <ChevronRight className="w-3.5 h-3.5" />
+                                <Check className="w-4 h-4" />
+                                <span>Accept Cash</span>
                               </button>
-                            )}
-                          </div>
+                              <button
+                                onClick={() => handleUpdateStatus(order.id, 'SERVED')}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-md shadow-rose-600/25 transition"
+                              >
+                                <X className="w-4 h-4" />
+                                <span>Reject Cash</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <select
+                                value={order.status}
+                                onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
+                                className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 font-semibold focus:outline-none focus:border-orange-500"
+                              >
+                                {ORDER_FLOW.map((s) => (
+                                  <option key={s} value={s}>
+                                    {STATUS_CONFIG[s]?.label || s}
+                                  </option>
+                                ))}
+                              </select>
+
+                              {nextStatus && (
+                                <button
+                                  onClick={() => handleUpdateStatus(order.id, nextStatus)}
+                                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold shrink-0 shadow-md shadow-orange-600/20 transition"
+                                  title={`Advance to ${STATUS_CONFIG[nextStatus]?.label}`}
+                                >
+                                  <span>Advance</span>
+                                  <ChevronRight className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );

@@ -5,7 +5,8 @@ import {
   CheckCircle2, 
   UtensilsCrossed, 
   Sparkles, 
-  BadgeCheck 
+  BadgeCheck,
+  Coins
 } from 'lucide-react';
 
 export const STATUS_CONFIG = {
@@ -50,6 +51,13 @@ export const STATUS_CONFIG = {
     text: 'text-emerald-400',
     border: 'border-emerald-500/20',
     icon: BadgeCheck
+  },
+  CASH_PAYMENT_PENDING: {
+    label: 'Cash Requested',
+    bg: 'bg-amber-500/10',
+    text: 'text-amber-400',
+    border: 'border-amber-500/20',
+    icon: Coins
   }
 };
 

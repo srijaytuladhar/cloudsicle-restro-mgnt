@@ -11,7 +11,10 @@ import {
   Plus,
   RefreshCw,
   Receipt,
-  Utensils
+  Utensils,
+  Coins,
+  CreditCard,
+  Loader2
 } from 'lucide-react';
 
 const ORDER_STEPS = [
@@ -31,6 +34,48 @@ export default function OrderStatus({ bookingInfo }) {
   const [allBookingOrders, setAllBookingOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastPolledAt, setLastPolledAt] = useState(null);
+  const [isProcessingOnline, setIsProcessingOnline] = useState(false);
+
+  const handlePayCash = async () => {
+    if (!activeOrder) return;
+    try {
+      const { error } = await supabase
+        .from('cl_restro_orders')
+        .update({ 
+          status: 'CASH_PAYMENT_PENDING', 
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', activeOrder.id);
+
+      if (error) throw error;
+      fetchOrderDetails();
+    } catch (err) {
+      alert('Error updating to Cash Payment: ' + err.message);
+    }
+  };
+
+  const handlePayOnline = async () => {
+    if (!activeOrder) return;
+    setIsProcessingOnline(true);
+    setTimeout(async () => {
+      try {
+        const { error } = await supabase
+          .from('cl_restro_orders')
+          .update({ 
+            status: 'PAYMENT_DONE', 
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', activeOrder.id);
+
+        if (error) throw error;
+        fetchOrderDetails();
+      } catch (err) {
+        alert('Error updating to Online Payment: ' + err.message);
+      } finally {
+        setIsProcessingOnline(false);
+      }
+    }, 2000);
+  };
 
   const fetchOrderDetails = async () => {
     try {
@@ -121,7 +166,11 @@ export default function OrderStatus({ bookingInfo }) {
     );
   }
 
-  const currentStepIndex = ORDER_STEPS.findIndex(s => s.key === activeOrder?.status);
+  const getStepIndex = (status) => {
+    if (status === 'CASH_PAYMENT_PENDING') return 4; // Treated as Served, waiting for payment done
+    return ORDER_STEPS.findIndex(s => s.key === status);
+  };
+  const currentStepIndex = getStepIndex(activeOrder?.status);
 
   return (
     <div className="flex flex-col min-h-full p-4 space-y-6 pb-20">
@@ -170,8 +219,9 @@ export default function OrderStatus({ bookingInfo }) {
 
             <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-800">
               {ORDER_STEPS.map((step, idx) => {
-                const isPassed = idx <= currentStepIndex;
-                const isCurrent = idx === currentStepIndex;
+                const isAllPaid = activeOrder?.status === 'PAYMENT_DONE';
+                const isPassed = isAllPaid || idx <= currentStepIndex;
+                const isCurrent = !isAllPaid && idx === currentStepIndex;
                 const Icon = step.icon;
 
                 return (
@@ -227,6 +277,64 @@ export default function OrderStatus({ bookingInfo }) {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Online Payment Processing Overlay */}
+      {isProcessingOnline && (
+        <div className="fixed inset-0 bg-slate-950/90 z-50 flex flex-col items-center justify-center p-6 text-center space-y-4">
+          <Loader2 className="w-12 h-12 text-orange-500 animate-spin" />
+          <h3 className="text-lg font-bold text-white">Processing Online Payment</h3>
+          <p className="text-xs text-slate-400 max-w-xs">Connecting to secure gateway. Please do not close or refresh this page.</p>
+        </div>
+      )}
+
+      {/* Payment Selection Card */}
+      {activeOrder && activeOrder.status === 'SERVED' && (
+        <div className="bg-slate-900 border border-orange-500/30 rounded-2xl p-5 space-y-4 shadow-xl shadow-orange-500/5">
+          <div className="flex items-center gap-2">
+            <Coins className="w-5 h-5 text-orange-400" />
+            <h3 className="text-sm font-bold text-white">Select Payment Method</h3>
+          </div>
+          <p className="text-xs text-slate-400">
+            Your order has been served! Please select how you'd like to settle your bill of <strong>NPR {Number(activeOrder.total_amount).toFixed(2)}</strong>.
+          </p>
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <button
+              onClick={handlePayCash}
+              className="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-orange-500/50 hover:bg-slate-900/60 transition group space-y-2"
+            >
+              <Coins className="w-6 h-6 text-amber-500 group-hover:scale-110 transition" />
+              <span className="text-xs font-bold text-slate-200">Pay with Cash</span>
+              <span className="text-[10px] text-slate-500 text-center">Pay staff directly</span>
+            </button>
+            <button
+              onClick={handlePayOnline}
+              className="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-orange-500/50 hover:bg-slate-900/60 transition group space-y-2"
+            >
+              <CreditCard className="w-6 h-6 text-emerald-500 group-hover:scale-110 transition" />
+              <span className="text-xs font-bold text-slate-200">Pay Online</span>
+              <span className="text-[10px] text-slate-500 text-center">Simulated success</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Cash Payment Pending Status Banner */}
+      {activeOrder && activeOrder.status === 'CASH_PAYMENT_PENDING' && (
+        <div className="bg-amber-950/20 border border-amber-500/30 rounded-2xl p-5 space-y-3 shadow-lg shadow-amber-500/5">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-amber-500/10 rounded-xl text-amber-400 border border-amber-500/20 animate-pulse">
+              <Loader2 className="w-5 h-5 animate-spin" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white">Cash Payment Pending</h3>
+              <p className="text-xs text-amber-400 font-medium">Waiting for staff validation</p>
+            </div>
+          </div>
+          <p className="text-xs text-slate-400">
+            A notification has been sent to the service staff. Please wait while they come to your table to collect <strong>NPR {Number(activeOrder.total_amount).toFixed(2)}</strong>.
+          </p>
         </div>
       )}
 
