@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Utensils, ShoppingBag, Clock, QrCode } from 'lucide-react';
+import { Utensils, ShoppingBag, Clock, QrCode, ScanLine } from 'lucide-react';
+import QrScannerModal from './QrScannerModal';
 
 export default function MobileFrame({ children, tableName, cartCount = 0, cartTotal = 0 }) {
   const location = useLocation();
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   // Hide bottom nav on landing page or empty states if needed
   const isLandingPage = location.pathname.startsWith('/table/');
@@ -31,9 +33,13 @@ export default function MobileFrame({ children, tableName, cartCount = 0, cartTo
               <span>{tableName}</span>
             </div>
           ) : (
-            <div className="px-2.5 py-1 rounded-full bg-slate-800/60 border border-slate-800 text-[11px] text-slate-400">
-              No Table
-            </div>
+            <button 
+              onClick={() => setIsScannerOpen(true)}
+              className="px-2.5 py-1 rounded-full bg-orange-600/10 hover:bg-orange-600/20 border border-orange-500/20 text-[11px] text-orange-400 font-semibold flex items-center gap-1 transition"
+            >
+              <QrCode className="w-3.5 h-3.5" />
+              <span>Scan QR</span>
+            </button>
           )}
         </header>
 
@@ -87,8 +93,18 @@ export default function MobileFrame({ children, tableName, cartCount = 0, cartTo
               <Clock className="w-5 h-5" />
               <span>My Orders</span>
             </NavLink>
+
+            <button
+              onClick={() => setIsScannerOpen(true)}
+              className="flex flex-col items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-slate-200 transition"
+            >
+              <ScanLine className="w-5 h-5" />
+              <span>Scan QR</span>
+            </button>
           </nav>
         )}
+
+        <QrScannerModal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} />
       </div>
     </div>
   );
