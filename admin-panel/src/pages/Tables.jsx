@@ -30,8 +30,8 @@ export default function Tables() {
 
   const userAppUrl = import.meta.env.VITE_USER_APP_URL || 'http://localhost:5174';
 
-  const fetchTables = async () => {
-    setLoading(true);
+  const fetchTables = async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       const { data, error } = await supabase
         .from('cl_restro_tables')
@@ -45,15 +45,15 @@ export default function Tables() {
     } catch (err) {
       console.error('Error fetching tables:', err);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchTables();
+    fetchTables(false);
 
     const pollInterval = setInterval(() => {
-      fetchTables();
+      fetchTables(true);
     }, 5000);
 
     return () => {
